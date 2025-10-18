@@ -1,9 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Trash2, Plus, Download } from "lucide-react";
+import { Trash2, Plus, Download, Copy, ArrowUp } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -40,10 +40,23 @@ const Proposta = () => {
     dataUtilizacaoInicio: "",
     dataUtilizacaoFim: "",
     localUtilizacao: "",
-    observacoes: ""
+    observacoes: "",
+    documentName: "",
   });
   
   const proposalRef = useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 200);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const addItem = () => {
     const newItem: ProposalItem = {
@@ -66,6 +79,16 @@ const Proposta = () => {
     }
   };
 
+  const duplicateItem = (id: string) => {
+    const idx = items.findIndex(i => i.id === id);
+    if (idx === -1) return;
+    const original = items[idx];
+    const newItem: ProposalItem = { ...original, id: (Date.now() + Math.random()).toString() };
+    const nextItems = [...items.slice(0, idx + 1), newItem, ...items.slice(idx + 1)];
+    setItems(nextItems);
+    toast.success("Item duplicado");
+  };
+
   const updateItem = (id: string, field: keyof ProposalItem, value: string) => {
     setItems(items.map(item => 
       item.id === id ? { ...item, [field]: value } : item
@@ -86,6 +109,13 @@ const Proposta = () => {
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  const sanitizeFileName = (name: string) => {
+    return name
+      .replace(/[\\/:*?"<>|]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim();
   };
 
   const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -360,7 +390,7 @@ const Proposta = () => {
         pdf.addImage(finalImg, "PNG", (pdfWidth - finalWidth) / 2, 0, finalWidth, finalHeight);
       }
 
-      pdf.save(`proposta-completa-mz-grooup-${clientInfo.cliente || 'cliente'}.pdf`);
+      pdf.save(`${sanitizeFileName(clientInfo.documentName?.trim() || `Proposta Comercial — ${clientInfo.cliente || 'Cliente'}`)}.pdf`);
       toast.dismiss();
       toast.success("PDF gerado com sucesso! Todas as páginas foram incluídas");
     } catch (error) {
@@ -445,15 +475,28 @@ const Proposta = () => {
               rows={3}
             />
           </div>
+          <div className="mt-4">
+            <label className="text-sm font-medium mb-2 block">Nome do Documento (PDF)</label>
+            <Input
+              value={clientInfo.documentName}
+              onChange={(e) => setClientInfo({...clientInfo, documentName: e.target.value})}
+              placeholder="Ex: Proposta Comercial — Cliente XYZ"
+            />
+          </div>
         </Card>
 
         <Card className="p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Itens da Proposta</h2>
-            <Button onClick={addItem} size="sm" className="gap-2">
-              <Plus className="w-4 h-4" />
-              Adicionar Item
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button onClick={addItem} size="sm" className="gap-2">
+                <Plus className="w-4 h-4" />
+                Adicionar Item
+              </Button>
+              <div className="px-2 py-1 text-xs font-semibold rounded bg-neutral-200 text-neutral-800">
+                {items.length} itens
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -502,11 +545,22 @@ const Proposta = () => {
                       placeholder="1"
                     />
                   </div>
-                  <div className="md:col-span-1 flex items-end">
+                  <div className="md:col-span-1 flex items-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => duplicateItem(item.id)}
+                      aria-label="Duplicar item"
+                      title="Duplicar item"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
                     <Button
                       variant="destructive"
                       size="icon"
                       onClick={() => removeItem(item.id)}
+                      aria-label="Remover item"
+                      title="Remover item"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -637,6 +691,18 @@ const Proposta = () => {
           </div>
         </div>
       </main>
+      {showScrollTop && (
+        <Button
+          onClick={scrollToTop}
+          size="icon"
+          variant="default"
+          className="fixed bottom-4 right-4 md:bottom-6 md:right-6 rounded-full shadow-lg z-50"
+          aria-label="Voltar ao topo"
+          title="Voltar ao topo"
+        >
+          <ArrowUp className="w-4 h-4" />
+        </Button>
+      )}
     </div>
   );
 };
