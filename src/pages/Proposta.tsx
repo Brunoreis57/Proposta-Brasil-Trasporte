@@ -28,6 +28,22 @@ interface ProposalItem {
   observacoes: string;
 }
 
+interface SavedProposal {
+  id: string;
+  timestamp: number;
+  clientInfo: {
+    cliente: string;
+    cnpj: string;
+    data: string;
+    dataUtilizacaoInicio: string;
+    dataUtilizacaoFim: string;
+    localUtilizacao: string;
+    observacoes: string;
+    documentName: string;
+  };
+  items: ProposalItem[];
+}
+
 const Proposta = () => {
   const [items, setItems] = useState<ProposalItem[]>([
     { id: "1", veiculo: "", origem: "", destino: "", valorUnitario: "", quantidade: "1", observacoes: "" },
@@ -44,8 +60,58 @@ const Proposta = () => {
     documentName: "",
   });
   
+  const [savedProposals, setSavedProposals] = useState<SavedProposal[]>([]);
   const proposalRef = useRef<HTMLDivElement>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("saved_proposals");
+    if (saved) {
+      try {
+        setSavedProposals(JSON.parse(saved));
+      } catch (e) {
+        console.error("Erro ao carregar propostas salvas", e);
+      }
+    }
+  }, []);
+
+  const saveProposal = () => {
+    if (!clientInfo.cliente) {
+      toast.error("Nome do cliente é obrigatório para salvar");
+      return;
+    }
+
+    const newProposal: SavedProposal = {
+      id: Date.now().toString(),
+      timestamp: Date.now(),
+      clientInfo: { ...clientInfo },
+      items: [...items]
+    };
+
+    const updated = [newProposal, ...savedProposals.filter(p => 
+      p.clientInfo.cliente !== newProposal.clientInfo.cliente || 
+      p.clientInfo.documentName !== newProposal.clientInfo.documentName
+    )].slice(0, 5);
+
+    setSavedProposals(updated);
+    localStorage.setItem("saved_proposals", JSON.stringify(updated));
+    toast.success("Proposta salva nos recentes");
+  };
+
+  const loadProposal = (proposal: SavedProposal) => {
+    setClientInfo(proposal.clientInfo);
+    setItems(proposal.items);
+    toast.success(`Proposta de ${proposal.clientInfo.cliente} carregada`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const deleteSavedProposal = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = savedProposals.filter(p => p.id !== id);
+    setSavedProposals(updated);
+    localStorage.setItem("saved_proposals", JSON.stringify(updated));
+    toast.success("Proposta removida dos recentes");
+  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -446,6 +512,44 @@ const Proposta = () => {
           </p>
         </div>
 
+        {savedProposals.length > 0 && (
+          <Card className="p-6 mb-6 bg-primary/5 border-primary/20">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Copy className="w-5 h-5 text-primary" />
+              Propostas Recentes (Últimas 5)
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {savedProposals.map((prop) => (
+                <div 
+                  key={prop.id}
+                  onClick={() => loadProposal(prop)}
+                  className="p-4 bg-white rounded-lg border border-border hover:border-primary cursor-pointer transition-all hover:shadow-md group relative"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold text-sm truncate pr-6">
+                      {prop.clientInfo.cliente || "Sem Nome"}
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                      onClick={(e) => deleteSavedProposal(prop.id, e)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {prop.clientInfo.documentName || "Documento sem nome"}
+                  </p>
+                  <p className="text-[10px] font-medium text-primary uppercase">
+                    Salva em: {new Date(prop.timestamp).toLocaleString('pt-BR')}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
         <Card className="p-6 mb-6">
           <h2 className="text-xl font-bold mb-4">Informações do Cliente</h2>
           <div className="grid md:grid-cols-2 gap-4">
@@ -612,7 +716,11 @@ const Proposta = () => {
           </div>
         </Card>
 
-        <div className="flex justify-end mb-8">
+        <div className="flex justify-end gap-4 mb-8">
+          <Button onClick={saveProposal} variant="outline" size="lg" className="gap-2">
+            <Copy className="w-5 h-5" />
+            Salvar para Depois
+          </Button>
           <Button onClick={generatePDF} size="lg" className="gap-2">
             <Download className="w-5 h-5" />
             Baixar PDF
