@@ -25,12 +25,12 @@ const Home = () => {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <img src={logo} alt="MZ Grooup" className="mx-auto mb-8 w-64 md:w-80" />
+            <img src={logo} alt="Brasil Transporte" className="mx-auto mb-8 w-64 md:w-80" />
             <h1 className="text-4xl md:text-6xl font-black text-foreground mb-6">
-              Soluções Inteligentes em Transporte
+              Excelência em Transportes e Logística
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8">
-              Executivo e Logística para Eventos
+              Segurança e Agilidade em cada Km
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/proposta">
@@ -105,7 +105,7 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <img 
             src={diferenciais} 
-            alt="Diferenciais MZ Grooup" 
+            alt="Diferenciais Brasil Transporte" 
             className="w-full max-w-5xl mx-auto rounded-xl shadow-2xl"
           />
         </div>
@@ -126,7 +126,7 @@ const Home = () => {
       <footer className="bg-foreground text-background py-8">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm">
-            © 2025 MZ GROOUP - Todos os direitos reservados
+            © 2026 BRASIL TRANSPORTES LTDA - Todos os direitos reservados
           </p>
         </div>
       </footer>

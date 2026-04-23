@@ -16,7 +16,7 @@ import servicos from "@/assets/servicos.png";
 import frota from "@/assets/frota.png";
 import diferenciais from "@/assets/diferenciais.png";
 import vamosJuntos from "@/assets/vamos-juntos.png";
-import carimbo from "@/assets/carimbo.jpg";
+import carimbo from "@/assets/carimbo.png";
 
 interface ProposalItem {
   id: string;
@@ -111,6 +111,12 @@ const Proposta = () => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split("-");
+    return `${day}/${month}/${year}`;
+  };
+
   const sanitizeFileName = (name: string) => {
     return name
       .replace(/[\\/:*?"<>|]/g, '-')
@@ -160,12 +166,12 @@ const Proposta = () => {
         diferenciais,
       ];
 
-      // Adicionar cada imagem como uma página com fundo preto
+      // Adicionar cada imagem como uma página com fundo branco
       for (let i = 0; i < images.length; i++) {
         if (i > 0) pdf.addPage();
         
-        // Adicionar fundo preto
-        pdf.setFillColor(0, 0, 0);
+        // Adicionar fundo branco
+        pdf.setFillColor(255, 255, 255);
         pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
         
         const img = await loadImage(images[i]);
@@ -173,19 +179,45 @@ const Proposta = () => {
         
         let finalWidth, finalHeight, x, y;
         
-        // Modo "contain" - mostra a imagem completa, mantendo proporções
-        if (imgRatio > pdfRatio) {
-          // Imagem proporcionalmente mais larga - ajustar pela largura
-          finalWidth = pdfWidth;
-          finalHeight = pdfWidth / imgRatio;
-          x = 0;
+        // Ajuste especial para a logo (primeira página) para não ocupar a tela toda
+        if (i === 0) {
+          // Adicionar linhas decorativas modernas nos cantos
+          pdf.setDrawColor(0, 96, 112); // Cor teal da marca
+          
+          // Canto superior esquerdo
+          pdf.setLineWidth(2);
+          pdf.line(10, 10, 60, 10);
+          pdf.line(10, 10, 10, 60);
+          
+          // Canto inferior direito
+          pdf.setLineWidth(1);
+          pdf.line(pdfWidth - 10, pdfHeight - 10, pdfWidth - 100, pdfHeight - 10);
+          pdf.line(pdfWidth - 10, pdfHeight - 10, pdfWidth - 10, pdfHeight - 60);
+
+          // Linhas decorativas sutis ao fundo
+          pdf.setDrawColor(0, 96, 112, 0.2); // Transparência aproximada
+          pdf.setLineWidth(0.5);
+          pdf.line(0, pdfHeight * 0.8, pdfWidth * 0.2, pdfHeight);
+          pdf.line(pdfWidth * 0.8, 0, pdfWidth, pdfHeight * 0.2);
+
+          const logoScale = 0.4; // 40% da largura da página
+          finalWidth = pdfWidth * logoScale;
+          finalHeight = finalWidth / imgRatio;
+          x = (pdfWidth - finalWidth) / 2;
           y = (pdfHeight - finalHeight) / 2;
         } else {
-          // Imagem proporcionalmente mais alta - ajustar pela altura
-          finalHeight = pdfHeight;
-          finalWidth = pdfHeight * imgRatio;
-          x = (pdfWidth - finalWidth) / 2;
-          y = 0;
+          // Modo "contain" para as outras imagens
+          if (imgRatio > pdfRatio) {
+            finalWidth = pdfWidth;
+            finalHeight = pdfWidth / imgRatio;
+            x = 0;
+            y = (pdfHeight - finalHeight) / 2;
+          } else {
+            finalHeight = pdfHeight;
+            finalWidth = pdfHeight * imgRatio;
+            x = (pdfWidth - finalWidth) / 2;
+            y = 0;
+          }
         }
         
         pdf.addImage(img, "PNG", x, y, finalWidth, finalHeight);
@@ -369,9 +401,9 @@ const Proposta = () => {
       });
       // Paginação por blocos e linhas aplicada acima.
 
-      // Adicionar página final com fundo preto
+      // Adicionar página final com fundo branco
       pdf.addPage();
-      pdf.setFillColor(0, 0, 0);
+      pdf.setFillColor(255, 255, 255);
       pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
       
       const finalImg = await loadImage(vamosJuntos);
@@ -592,7 +624,7 @@ const Proposta = () => {
           <div className="mb-8" data-pdf-block>
             <div className="flex justify-end items-start mb-8 pb-6 border-b-4 border-primary">
               <div className="text-right text-sm">
-                <p className="font-bold text-neutral-800">Data: {new Date(clientInfo.data).toLocaleDateString('pt-BR')}</p>
+                <p className="font-bold text-neutral-800">Data: {formatDisplayDate(clientInfo.data)}</p>
               </div>
             </div>
             
@@ -612,7 +644,7 @@ const Proposta = () => {
                 )}
                 {(clientInfo.dataUtilizacaoInicio || clientInfo.dataUtilizacaoFim) && (
                   <p className="text-sm md:text-base lg:text-lg font-semibold col-span-1 md:col-span-2 break-words">
-                    Período de Utilização: {clientInfo.dataUtilizacaoInicio ? new Date(clientInfo.dataUtilizacaoInicio).toLocaleDateString('pt-BR') : '___'} até {clientInfo.dataUtilizacaoFim ? new Date(clientInfo.dataUtilizacaoFim).toLocaleDateString('pt-BR') : '___'}
+                    Período de Utilização: {clientInfo.dataUtilizacaoInicio ? formatDisplayDate(clientInfo.dataUtilizacaoInicio) : '___'} até {clientInfo.dataUtilizacaoFim ? formatDisplayDate(clientInfo.dataUtilizacaoFim) : '___'}
                   </p>
                 )}
               </div>
@@ -679,13 +711,14 @@ const Proposta = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="text-left">
                 <p className="font-black text-neutral-900 text-sm md:text-base mb-2 break-words">
-                  MZ GROOUP - Soluções Inteligentes em Transporte Executivo e Logística para Eventos
+                  BRASIL TRANSPORTES LTDA - Excelência em Transportes e Logística
                 </p>
-                <p className="text-neutral-700 text-xs md:text-sm break-words">CNPJ: 35.274.028/0001-00</p>
-                <p className="text-neutral-700 text-xs md:text-sm break-words">E-mail: mtzilmann@gmail.com</p>
+                <p className="text-neutral-700 text-xs md:text-sm break-words">CNPJ: 63.141.914/0001-92</p>
+                <p className="text-neutral-700 text-xs md:text-sm break-words">Endereço: R Jair Hamms, 38 sala 102 - Pedra Branca, Palhoça/SC</p>
+                <p className="text-neutral-700 text-xs md:text-sm break-words">E-mail: brasil@mzgrouptransportes.com.br</p>
               </div>
               <div className="flex-shrink-0">
-                <img src={carimbo} alt="Carimbo MZ Transportes" className="h-16 md:h-20 w-auto" />
+                <img src={carimbo} alt="Carimbo Brasil Transporte" className="h-16 md:h-20 w-auto" />
               </div>
             </div>
           </div>
