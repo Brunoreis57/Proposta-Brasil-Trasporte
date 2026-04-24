@@ -504,7 +504,7 @@ const Proposta = () => {
       
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-black text-foreground mb-2">
+          <h1 className="text-2xl md:text-4xl font-black text-foreground mb-2">
             CRIAR PROPOSTA COMERCIAL
           </h1>
           <p className="text-muted-foreground">
@@ -716,12 +716,12 @@ const Proposta = () => {
           </div>
         </Card>
 
-        <div className="flex justify-end gap-4 mb-8">
-          <Button onClick={saveProposal} variant="outline" size="lg" className="gap-2">
+        <div className="flex flex-col sm:flex-row justify-end gap-4 mb-8">
+          <Button onClick={saveProposal} variant="outline" size="lg" className="gap-2 w-full sm:w-auto order-2 sm:order-1">
             <Copy className="w-5 h-5" />
             Salvar para Depois
           </Button>
-          <Button onClick={generatePDF} size="lg" className="gap-2">
+          <Button onClick={generatePDF} size="lg" className="gap-2 w-full sm:w-auto order-1 sm:order-2 shadow-lg">
             <Download className="w-5 h-5" />
             Baixar PDF
           </Button>
